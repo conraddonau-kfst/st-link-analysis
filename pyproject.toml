@@ -34,6 +34,9 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["st_link_analysis"]
+include = [
+  "st_link_analysis/frontend/build/**/*"
+]
 
 [tool.ruff]
 line-length = 88
