@@ -15,17 +15,44 @@ cytoscape.use(dagre);
 const CY_ID = "cy";
 const SELECT_DEBOUNCE = 100;
 
+// Props from Python wrapper
+// These should be passed automatically via Streamlit component props
+const visible_node_data_keys = window.props?.visible_node_data_keys || null;
+const visible_edge_data_keys = window.props?.visible_edge_data_keys || null;
+
+
 // Event hanlders
 function _handleSelection(e) {
     const selection = { selected: null, lastSelected: null };
     const type = e.type;
-    if (type == "select") {
-        selection.lastSelected = e.target;
+
+    if (type === "select") {
+        let data = e.target.data(); // full element data
+        const isEdge = e.target.group() === "edges";
+
+        // choose allowed keys based on node/edge
+        const allowedKeys = isEdge ? visible_edge_data_keys : visible_node_data_keys;
+
+        // filter data if a whitelist is provided
+        if (allowedKeys && allowedKeys.length > 0) {
+            const filteredData = {};
+            allowedKeys.forEach((key) => {
+                if (key in data) filteredData[key] = data[key];
+            });
+            data = filteredData;
+        }
+
+        // store filtered data in lastSelected
+        selection.lastSelected = { element: e.target, data };
     }
+
+    // always store the full selection collection
     selection.selected = e.cy.$(":selected");
     State.updateState("selection", selection);
+
     document.body.focus();
 }
+
 
 // Initailize cytoscape (only runs once)
 function initCyto(listeners) {

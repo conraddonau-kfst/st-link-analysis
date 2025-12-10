@@ -47,7 +47,13 @@ edge_styles = [
 layout = {"name": "cose", "animate": "end", "nodeDimensionsIncludeLabels": False}
 
 st_link_analysis(
-    elements, node_styles=node_styles, edge_styles=edge_styles, layout=layout, key="xyz"
+    elements,
+    node_styles=node_styles,
+    edge_styles=edge_styles,
+    layout=layout,
+    key="xyz",
+    visible_node_data_keys=["id", "label", "name", "person", "created_at", "description"],
+    visible_edge_data_keys=["id", "source", "target", "label"],
 )
 
 with st.expander("Snippet", expanded=False, icon="💻"):

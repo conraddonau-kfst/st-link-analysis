@@ -43,6 +43,8 @@ def st_link_analysis(
     node_actions: List[Literal["remove", "expand"]] = [],
     enable_node_actions: Optional[bool] = None,  # deprecated
     events: List[Event] = [],
+    visible_node_data_keys: Optional[List[str]] = None,
+    visible_edge_data_keys: Optional[List[str]] = None,
 ) -> Any:
     """
     Renders a link analysis graph using Cytoscape in Streamlit.
@@ -87,6 +89,12 @@ def st_link_analysis(
         events are triggered, the event information is sent back to the Streamlit
         app as the component's return value. NOTE: only defined once. Changing the
         list of events requires remounting the component.
+    visible_node_data_keys: list[str], default None
+        A list of node data keys to be made visible in the graph. If None, all node
+        data keys will be visible.
+    visible_edge_data_keys: list[str], default None
+        A list of edge data keys to be made visible in the graph. If None, all edge
+        data keys will be visible.
     """
     node_styles_dump = [n.dump() for n in node_styles]
     edge_styles_dump = [e.dump() for e in edge_styles]
@@ -120,4 +128,6 @@ def st_link_analysis(
         on_change=on_change,
         nodeActions=node_actions,
         events=events_dump,
+        visible_node_data_keys=visible_node_data_keys,
+        visible_edge_data_keys=visible_edge_data_keys,
     )
