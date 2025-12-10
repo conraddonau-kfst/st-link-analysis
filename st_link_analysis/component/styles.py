@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 # TODO: remove if no depreciation warnings
@@ -17,6 +17,8 @@ class NodeStyle:
         color: Optional[str] = None,
         caption: Optional[str] = None,
         icon: Optional[str] = None,
+        visible_properties: Optional[List[str]] = None,
+        custom_styles: Optional[Dict] = None,
     ) -> None:
         """
         Define a custom style of a node in the graph based on label.
@@ -36,15 +38,32 @@ class NodeStyle:
             Node icon to be passed by the name of Material Icons (e.g. 'person')
             or by url (e.g. url('...')). A list of supported icons is available
             in `st_link_analysis.component.icons`
+        visible_properties: Optional[List[str]]
+            A list of property names to display in the info panel when a node
+            of this type is selected. If None, all properties will be shown.
+        custom_styles: Optional[Dict]
+            A dictionary of additional styles that will be applied to the node.
+            This allows for control of any valid Cytoscape.js styles beyond the
+            basic options provided by the constructor. For detailed information
+            on styles that can be set, visit: https://js.cytoscape.org/#style
 
         Example
         -------
         >>> node_style = NodeStyle(label="Person", color="#345eeb", caption="name")
+        >>> node_style = NodeStyle(
+        ...     label="Person",
+        ...     color="#345eeb",
+        ...     caption="name",
+        ...     visible_properties=["name", "age", "email"],
+        ...     custom_styles={"border-width": 2, "border-color": "#000"}
+        ... )
         """
         self.label = label
         self.color = color
         self.caption = caption
         self.icon = icon
+        self.visible_properties = visible_properties
+        self.custom_styles = custom_styles
 
     def dump(self) -> Dict[str, Any]:
         selector = f"node[label='{self.label}']"
@@ -58,10 +77,14 @@ class NodeStyle:
             if not self.icon.startswith("url") and not self.icon.endswith(".svg"):
                 self.icon = f"./icons/{self.icon.lower()}.svg"
             style["background-image"] = self.icon
+        if self.custom_styles:
+            for key, val in self.custom_styles.items():
+                style[key] = val
 
         return {
             "selector": selector,
             "style": style,
+            "visible_properties": self.visible_properties,
         }
 
 
@@ -74,6 +97,8 @@ class EdgeStyle:
         labeled: bool = False,  # deprecated
         directed: bool = False,
         curve_style: Optional[str] = None,
+        visible_properties: Optional[List[str]] = None,
+        custom_styles: Optional[Dict] = None,
     ) -> None:
         """
         Define a custom style of an edge in the graph based on label.
@@ -101,17 +126,33 @@ class EdgeStyle:
             Specifies the edge curving method to use. By default, it is set to
             "bezier", which is suitable for multigraphs. For large, simple graphs,
             consider using "haystack" for better performance. For more options
-            and detailed information,visit: https://js.cytoscape.org/#style/edge-line
+            and detailed information, visit: https://js.cytoscape.org/#style/edge-line
+        visible_properties: Optional[List[str]]
+            A list of property names to display in the info panel when an edge
+            of this type is selected. If None, all properties will be shown.
+        custom_styles: Optional[Dict]
+            A dictionary of additional styles that will be applied to the edge.
+            This allows for control of any valid Cytoscape.js styles beyond the
+            basic options provided by the constructor. For detailed information
+            on styles that can be set, visit: https://js.cytoscape.org/#style
 
         Example
         -------
         >>> edge_style = EdgeStyle(label="FOLLOWS", color="#345eeb")
+        >>> edge_style = EdgeStyle(
+        ...     label="FOLLOWS",
+        ...     color="#345eeb",
+        ...     visible_properties=["since", "strength"],
+        ...     custom_styles={"width": 3, "line-style": "dashed"}
+        ... )
         """
         self.label = label
         self.color = color
         self.caption = caption
         self.directed = directed
         self.curve_style = curve_style
+        self.visible_properties = visible_properties
+        self.custom_styles = custom_styles
 
         # TODO: remove in next version along with imports, docs, and signature
         if labeled is not None:
@@ -138,8 +179,12 @@ class EdgeStyle:
             style["target-arrow-shape"] = "triangle"
         if self.curve_style:
             style["curve-style"] = self.curve_style
+        if self.custom_styles:
+            for key, val in self.custom_styles.items():
+                style[key] = val
 
         return {
             "selector": selector,
             "style": style,
+            "visible_properties": self.visible_properties,
         }

@@ -25,9 +25,16 @@ let elements, newElements;
 let style, newStyle;
 let layout, newLayout;
 
+// Store props globally for access by other modules (e.g., graph.js)
+window.props = {};
+
 // Streamlit render event handler
 function onRender(event) {
     const { args, theme } = event.detail;
+
+    // Update global props for access by other modules
+    window.props = args;
+
     newElements = JSON.stringify(args["elements"]);
     newStyle = JSON.stringify(args["style"]) + theme.base;
     newLayout = JSON.stringify(args["layout"]);

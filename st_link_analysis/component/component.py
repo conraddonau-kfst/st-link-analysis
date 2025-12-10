@@ -43,8 +43,8 @@ def st_link_analysis(
     node_actions: List[Literal["remove", "expand"]] = [],
     enable_node_actions: Optional[bool] = None,  # deprecated
     events: List[Event] = [],
-    visible_node_data_keys: Optional[List[str]] = None,
-    visible_edge_data_keys: Optional[List[str]] = None,
+    visible_node_data_keys: Optional[List[str]] = None,  # deprecated
+    visible_edge_data_keys: Optional[List[str]] = None,  # deprecated
 ) -> Any:
     """
     Renders a link analysis graph using Cytoscape in Streamlit.
@@ -61,9 +61,13 @@ def st_link_analysis(
         contain layout options. Default is "cose". A list of support layouts and
         default settings is available in `st_link_analysis.component.layout`
     node_styles : list[NodeStyle], default []
-        A list of custom NodeStyle instances to apply styles to node groups in the graph
+        A list of custom NodeStyle instances to apply styles to node groups in the graph.
+        Use the `visible_properties` parameter on each NodeStyle to control which
+        properties are shown in the info panel for that node type.
     edge_styles : list[EdgeStyle], default []
-        A list of custom EdgeStyle instances to apply styles to edge groups in the graph
+        A list of custom EdgeStyle instances to apply styles to edge groups in the graph.
+        Use the `visible_properties` parameter on each EdgeStyle to control which
+        properties are shown in the info panel for that edge type.
     height: int, default 500
         Component's height in pixels. NOTE: only defined once. Changing the value
         requires remounting the component.
@@ -89,16 +93,29 @@ def st_link_analysis(
         events are triggered, the event information is sent back to the Streamlit
         app as the component's return value. NOTE: only defined once. Changing the
         list of events requires remounting the component.
-    visible_node_data_keys: list[str], default None
-        A list of node data keys to be made visible in the graph. If None, all node
-        data keys will be visible.
-    visible_edge_data_keys: list[str], default None
-        A list of edge data keys to be made visible in the graph. If None, all edge
-        data keys will be visible.
+    visible_node_data_keys: list[str], default None (deprecated)
+        This parameter is deprecated and will be removed in a future release. Use
+        `visible_properties` on NodeStyle instead. A list of node data keys to be
+        made visible in the graph. If None, all node data keys will be visible.
+    visible_edge_data_keys: list[str], default None (deprecated)
+        This parameter is deprecated and will be removed in a future release. Use
+        `visible_properties` on EdgeStyle instead. A list of edge data keys to be
+        made visible in the graph. If None, all edge data keys will be visible.
     """
     node_styles_dump = [n.dump() for n in node_styles]
     edge_styles_dump = [e.dump() for e in edge_styles]
     style = node_styles_dump + edge_styles_dump
+
+    # Build visible_properties lookup maps from styles
+    # These map label -> list of visible property names (or None for all)
+    node_visible_props = {
+        s["selector"].split("'")[1]: s["visible_properties"]
+        for s in node_styles_dump
+    }
+    edge_visible_props = {
+        s["selector"].split("'")[1]: s["visible_properties"]
+        for s in edge_styles_dump
+    }
 
     height_str = str(height) + "px"
 
@@ -119,6 +136,20 @@ def st_link_analysis(
     if enable_node_actions and not node_actions:
         node_actions = ["remove", "expand"]
 
+    # TODO: remove in next version along with imports, docs, and signature
+    if visible_node_data_keys is not None:
+        warnings.warn(
+            "Parameter `visible_node_data_keys` is deprecated and will be removed in a future release. "
+            "Please use the `visible_properties` parameter on NodeStyle instead.",
+            LinkAnalysisDeprecationWarning,
+        )
+    if visible_edge_data_keys is not None:
+        warnings.warn(
+            "Parameter `visible_edge_data_keys` is deprecated and will be removed in a future release. "
+            "Please use the `visible_properties` parameter on EdgeStyle instead.",
+            LinkAnalysisDeprecationWarning,
+        )
+
     return _component_func(
         elements=elements,
         style=style,
@@ -128,6 +159,9 @@ def st_link_analysis(
         on_change=on_change,
         nodeActions=node_actions,
         events=events_dump,
+        node_visible_props=node_visible_props,
+        edge_visible_props=edge_visible_props,
+        # Keep deprecated params for backward compatibility
         visible_node_data_keys=visible_node_data_keys,
         visible_edge_data_keys=visible_edge_data_keys,
     )

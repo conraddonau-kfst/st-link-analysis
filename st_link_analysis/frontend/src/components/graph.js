@@ -15,11 +15,35 @@ cytoscape.use(dagre);
 const CY_ID = "cy";
 const SELECT_DEBOUNCE = 100;
 
-// Props from Python wrapper
-// These should be passed automatically via Streamlit component props
-const visible_node_data_keys = window.props?.visible_node_data_keys || null;
-const visible_edge_data_keys = window.props?.visible_edge_data_keys || null;
+// Helper to get visible properties for an element based on its label
+function _getVisibleProperties(element) {
+    const isEdge = element.group() === "edges";
+    const elementLabel = element.data("label");
 
+    // Get per-style visible properties maps from props
+    const nodeVisibleProps = window.props?.node_visible_props || {};
+    const edgeVisibleProps = window.props?.edge_visible_props || {};
+
+    // Fallback to deprecated global keys for backward compatibility
+    const globalNodeKeys = window.props?.visible_node_data_keys || null;
+    const globalEdgeKeys = window.props?.visible_edge_data_keys || null;
+
+    // Determine allowed keys: per-style takes priority, then global, then null (show all)
+    let allowedKeys;
+    if (isEdge) {
+        allowedKeys =
+            edgeVisibleProps[elementLabel] !== undefined
+                ? edgeVisibleProps[elementLabel]
+                : globalEdgeKeys;
+    } else {
+        allowedKeys =
+            nodeVisibleProps[elementLabel] !== undefined
+                ? nodeVisibleProps[elementLabel]
+                : globalNodeKeys;
+    }
+
+    return allowedKeys;
+}
 
 // Event hanlders
 function _handleSelection(e) {
@@ -27,31 +51,33 @@ function _handleSelection(e) {
     const type = e.type;
 
     if (type === "select") {
-        let data = e.target.data(); // full element data
-        const isEdge = e.target.group() === "edges";
+        const element = e.target;
 
-        // choose allowed keys based on node/edge
-        const allowedKeys = isEdge ? visible_edge_data_keys : visible_node_data_keys;
+        // Get visible properties based on element's label
+        const allowedKeys = _getVisibleProperties(element);
 
-        // filter data if a whitelist is provided
-        if (allowedKeys && allowedKeys.length > 0) {
-            const filteredData = {};
-            allowedKeys.forEach((key) => {
-                if (key in data) filteredData[key] = data[key];
-            });
-            data = filteredData;
-        }
+        // filter element data
+        const filteredData =
+            allowedKeys && allowedKeys.length > 0
+                ? allowedKeys.reduce((acc, key) => {
+                      if (key in element.data()) acc[key] = element.data()[key];
+                      return acc;
+                  }, {})
+                : element.data();
 
-        // store filtered data in lastSelected
-        selection.lastSelected = { element: e.target, data };
+        // store the element and filtered data
+        selection.lastSelected = {
+            element,
+            filteredData, // <--- this is what the panel will read
+        };
     }
 
-    // always store the full selection collection
     selection.selected = e.cy.$(":selected");
     State.updateState("selection", selection);
 
     document.body.focus();
 }
+
 
 
 // Initailize cytoscape (only runs once)

@@ -43,7 +43,8 @@ function updateInfopanel() {
     let color, data, label, expanded, icon;
     if (eles?.length === 1) {
         color = eles.first().style().backgroundColor;
-        data = eles.first().data();
+        const lastSelected = State.getState("selection").lastSelected;
+        data = lastSelected?.filteredData || {};
         label = data["label"] || eles.group().slice(0, -1).toUpperCase();
         expanded = true;
         icon = eles.style()["background-image"];
